@@ -1,0 +1,3 @@
+defusedxml
+pre-commit
+pytest
