@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import ssl  # noqa: F401
+import urllib.parse  # noqa: F401
+from urllib.request import urlopen  # noqa: F401
+from xml.etree.ElementTree import Element
+
+from defusedxml import ElementTree as ET
 
 from .api_factory import _create_element
 from .request import Request
 from .response import Response
-
-if TYPE_CHECKING:
-    from xml.etree.ElementTree import Element
 
 
 class Client:
@@ -28,6 +30,7 @@ class Client:
         self.password = password
         self.is_encrypted = is_encrypted
         self.server = server
+        self.port = port
 
     def get_login_tag(self) -> Element:
         login = _create_element("Login")
@@ -42,12 +45,82 @@ class Client:
 
         return login
 
-    def new_request(self) -> Request:
-        # create a new, empty Request object and return it
-        pass
+    def _request_proxy_call(self, fn_name, *args, **kwargs):
+        request = Request(apiversion="1805.2")
+        getattr(request, fn_name)(args, kwargs)
+
+        response = self.send(request)
+        return response
+
+    def get_zones(self):
+        # returns a list of Zones
+        return self._request_proxy_call("get_zones")
+
+    def set_host(self, *args, **kwargs):
+        # returns the result of the set command - single element
+        return self._request_proxy_call("set_host", args, kwargs)[0]
 
     def send(self, request: Request) -> Response:
-        # make web call using the request
-        # wait for the respone from the server
-        # create a Response object using the respone and return it
-        pass
+        # request.set_login(self.get_login_tag())
+        # req_str = urllib.parse.quote(str(request))
+        # # try
+        # response_http = urlopen(
+        #     f"https://{self.server}:{self.port}/webconsole/APIController?reqxml={req_str}"  # noqa: E501
+        # )
+        #
+        # response_element = ET.fromstring(response_http.read())
+        mock_reponse = """
+<Response>
+
+<Login>
+    <status>Authentication Successful</status>
+</Login>
+
+<Zone transactionid="get_zones">
+    <Name>RED</Name>
+    <Type>DMZ</Type>
+    <Description />
+    <SourceNetworks>
+      <Network>Net_01</Network>
+      <Network>Net_02</Network>
+      <Network>Net_03</Network>
+    </SourceNetworks>
+</Zone>
+
+<Zone transactionid="get_zones">
+    <Name>LAN</Name>
+    <Type>LAN</Type>
+    <Description>Some description</Description>
+    <SourceNetworks>
+      <Network>Net_04</Network>
+      <Network>Net_05</Network>
+    </SourceNetworks>
+</Zone>
+
+</Response>
+        """
+        response_element = ET.fromstring(mock_reponse)
+
+        responses = self._parse_response(response_element)
+
+        return responses
+
+    def _parse_response(self, response_element: Element):
+        responses = [Response(e) for e in response_element]
+
+        # don't need to store the Successful Authentication response:
+        login_response = next(
+            (
+                r
+                for r in responses
+                if r.data["message"] == "Authentication Successful"
+            ),
+            None,
+        )
+        if login_response is not None:
+            responses.remove(login_response)
+
+        # for each response:
+        #     find corresponding request using transactionid
+        #     set a reference to the request in the response
+        return responses
