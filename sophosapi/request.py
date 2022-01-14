@@ -5,6 +5,8 @@ from xml.etree.ElementTree import Element
 from defusedxml import ElementTree as ET
 
 from .api_factory import _create_element
+from .api_factory import _make_filter
+from .api_factory import Filter
 
 
 class Request:
@@ -14,10 +16,16 @@ class Request:
 
         self._get = _create_element("Get")
         self._set = _create_element("Set")
+        self._add = _create_element("Set")
+        self._add.set("operation", "add")
+        self._update = _create_element("Set")
+        self._update.set("operation", "update")
         self._remove = _create_element("Remove")
 
         self.request.append(self._get)
         self.request.append(self._set)
+        self.request.append(self._add)
+        self.request.append(self._update)
         self.request.append(self._remove)
 
     def __str__(self):
@@ -26,15 +34,37 @@ class Request:
     def set_login(self, login: Element):
         self.request.insert(0, login)
 
-    # Zone
-    def get_zones(self, *args, **kwargs):
-        """
-        <Get>
-            <Zone transactionid="get_zones"></Zone>
-        </Get>
-        """
+    # ZONES
+    def get_zones(self):
         zone = _create_element("Zone", transactionid="get_zones")
         self._get.append(zone)
+
+    def _get_zone_filter(self, transactionid: str, type: Filter, name: str):
+        zone = _create_element("Zone", transactionid=transactionid)
+        filter_elem = _make_filter(type, name)
+        zone.append(filter_elem)
+        self._get.append(zone)
+
+    def get_zone(self, name: str):
+        self._get_zone_filter("get_zone_equal", Filter.EQUAL, name)
+
+    def get_zones_like(self, name: str):
+        self._get_zone_filter("get_zone_like", Filter.LIKE, name)
+
+    def get_zones_except(self, name: str):
+        self._get_zone_filter("get_zone_except", Filter.EXCEPT, name)
+
+    def set_zone(self, *args, **kwargs):
+        pass
+
+    def add_zone(self, *args, **kwargs):
+        pass
+
+    def update_zone(self, *args, **kwargs):
+        pass
+
+    def remove_zone(self, *args, **kwargs):
+        pass
 
     # IPHost
     def set_host(

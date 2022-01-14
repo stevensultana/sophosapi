@@ -32,6 +32,27 @@ class Client:
         self.server = server
         self.port = port
 
+    def test_login(self) -> dict:
+        # test a login only
+        # check if there are issues with API access
+        # check if there are issues with Authentication
+        # readonly issues would be with the transaction response, not login
+        request = Request(apiversion="1805.2")
+        response_element = self._make_api_call(request)
+
+        status_code = -1
+        message = "No response"
+        if len(response_element) == 1:
+
+            response = Response(response_element[0])
+            status_code = response.status_code
+            message = response.data["message"]
+
+        return {
+            "status_code": status_code,
+            "message": message,
+        }
+
     def get_login_tag(self) -> Element:
         login = _create_element("Login")
         login_username = _create_element("Username", text=self.username)
@@ -47,63 +68,56 @@ class Client:
 
     def _request_proxy_call(self, fn_name, *args, **kwargs):
         request = Request(apiversion="1805.2")
-        getattr(request, fn_name)(args, kwargs)
+        getattr(request, fn_name)(*args, **kwargs)
 
         response = self.send(request)
         return response
 
-    def get_zones(self):
-        # returns a list of Zones
-        return self._request_proxy_call("get_zones")
+    # ZONES
+    def get_zones(self, *args, **kwargs):
+        return self._request_proxy_call("get_zones", *args, **kwargs)
 
+    def get_zone(self, *args, **kwargs):
+        return self._request_proxy_call("get_zone", *args, **kwargs)[0]
+
+    def get_zones_like(self, *args, **kwargs):
+        return self._request_proxy_call("get_zones_like", args, kwargs)
+
+    def get_zones_except(self, *args, **kwargs):
+        return self._request_proxy_call("get_zones_except", args, kwargs)
+
+    def set_zone(self, *args, **kwargs):
+        return self._request_proxy_call("set_zone", args, kwargs)[0]
+
+    def add_zone(self, *args, **kwargs):
+        return self._request_proxy_call("add_zone", args, kwargs)[0]
+
+    def update_zone(self, *args, **kwargs):
+        return self._request_proxy_call("update_zone", args, kwargs)[0]
+
+    def remove_zone(self, *args, **kwargs):
+        return self._request_proxy_call("remove_zone", args, kwargs)[0]
+
+    # HOSTS
     def set_host(self, *args, **kwargs):
         # returns the result of the set command - single element
         return self._request_proxy_call("set_host", args, kwargs)[0]
 
     def send(self, request: Request) -> Response:
-        # request.set_login(self.get_login_tag())
-        # req_str = urllib.parse.quote(str(request))
-        # # try
-        # response_http = urlopen(
-        #     f"https://{self.server}:{self.port}/webconsole/APIController?reqxml={req_str}"  # noqa: E501
-        # )
-        #
-        # response_element = ET.fromstring(response_http.read())
-        mock_reponse = """
-<Response>
-
-<Login>
-    <status>Authentication Successful</status>
-</Login>
-
-<Zone transactionid="get_zones">
-    <Name>RED</Name>
-    <Type>DMZ</Type>
-    <Description />
-    <SourceNetworks>
-      <Network>Net_01</Network>
-      <Network>Net_02</Network>
-      <Network>Net_03</Network>
-    </SourceNetworks>
-</Zone>
-
-<Zone transactionid="get_zones">
-    <Name>LAN</Name>
-    <Type>LAN</Type>
-    <Description>Some description</Description>
-    <SourceNetworks>
-      <Network>Net_04</Network>
-      <Network>Net_05</Network>
-    </SourceNetworks>
-</Zone>
-
-</Response>
-        """
-        response_element = ET.fromstring(mock_reponse)
-
+        response_element = self._make_api_call(request)
         responses = self._parse_response(response_element)
-
         return responses
+
+    def _make_api_call(self, request: Request) -> Element:
+        request.set_login(self.get_login_tag())
+        req_str = urllib.parse.quote(str(request))
+        # try
+        response_http = urlopen(
+            f"https://{self.server}:{self.port}/webconsole/APIController?reqxml={req_str}"  # noqa: E501
+        )
+
+        response_element = ET.fromstring(response_http.read())
+        return response_element
 
     def _parse_response(self, response_element: Element):
         responses = [Response(e) for e in response_element]

@@ -1,6 +1,13 @@
+from enum import Enum
 from xml.etree.ElementTree import Element
 
 tags_of_lists = ("SourceNetworks",)
+
+
+class Filter(Enum):
+    EQUAL = "="
+    LIKE = "like"
+    EXCEPT = "!="
 
 
 def _create_element(
@@ -16,7 +23,17 @@ def _create_element(
     return new_element
 
 
-def xml_to_json(elem: Element):
+def _make_filter(type: Filter, name: str) -> Element:
+    filter_elem = _create_element("Filter")
+    key_elem = _create_element("key", text=name)
+    key_elem.set("name", "Name")
+    key_elem.set("criteria", type.value)
+
+    filter_elem.append(key_elem)
+    return filter_elem
+
+
+def xml_to_json(elem: Element) -> dict:
     obj = {}
     for attribute in elem:
         if len(attribute) > 0:  # has children
