@@ -16,14 +16,22 @@ def _create_element(
     text: str = "",
     transactionid: str = "",
 ) -> Element:
-
+    """Create the Element:
+    <elem_name "transactionid"="id">text</elem_name>
+    """
     new_element = Element(elem_name)
     new_element.text = text
-    new_element.set("transactionid", transactionid)
+    if transactionid != "":
+        new_element.set("transactionid", transactionid)
     return new_element
 
 
 def _make_filter(type: Filter, name: str) -> Element:
+    """Create the Element:
+    <Filter>
+        <key "name"="Name" "criteria"="type.value">name</key>
+    </Filter>
+    """
     filter_elem = _create_element("Filter")
     key_elem = _create_element("key", text=name)
     key_elem.set("name", "Name")
@@ -34,14 +42,16 @@ def _make_filter(type: Filter, name: str) -> Element:
 
 
 def xml_to_json(elem: Element) -> dict:
+    """Create a dict with "attribute.tag":"text" pairs, or nesting/lists as
+    needed
+    """
     obj = {}
     for attribute in elem:
         if len(attribute) > 0:  # has children
-            if attribute.tag in tags_of_lists:
-                # handle list
+            if attribute.tag in tags_of_lists:  # handle list
                 obj[attribute.tag] = [e.text for e in attribute]
 
-            else:
+            else:  # recurse
                 obj[attribute.tag] = xml_to_json(attribute)
 
         else:

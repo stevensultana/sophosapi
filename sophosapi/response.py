@@ -6,20 +6,20 @@ from .api_factory import xml_to_json
 
 
 class Response:
-    def __init__(self, elem: Element):
+    def __init__(self, response_elem: Element):
         self.data = {}
         self.status_code = 0
-        self.original_request = elem.get("transactionid")
+        self.original_request = response_elem.get("transactionid")
 
         # check for errors
-        if elem.tag == "Status":
-            self.status_code = int(elem.get("code"))
-            self.data["message"] = elem.text
+        if response_elem.tag == "Status":
+            self.status_code = int(response_elem.get("code"))
+            self.data["message"] = response_elem.text
             return
 
         # check for Login status
-        if elem.tag == "Login":
-            if elem.find("./status").text == "Authentication Failure":
+        if response_elem.tag == "Login":
+            if response_elem.find("./status").text == "Authentication Failure":
                 self.status_code = 401  # unofficial: to indicate unauthorized
                 self.data["message"] = (
                     "Authentication Failure: Can be either incorrect "
@@ -30,22 +30,22 @@ class Response:
                 return
             else:
                 self.status_code = 200  # unofficial: to indicate successful auth  # noqa: E501
-                auth_success = elem.find("./status").text
+                auth_success = response_elem.find("./status").text
                 assert auth_success == "Authentication Successful"
                 self.data["message"] = auth_success
                 return
 
         # Check for return data
         if self.original_request.startswith("get"):  # eg get_zones
-            self.data = xml_to_json(elem)
+            self.data = xml_to_json(response_elem)
             self.status_code = 200
 
         elif self.original_request.startswith("set"):  # eg set_zone_name
-            status = elem.find("./Status")
+            status = response_elem.find("./Status")
             self.data["message"] = status.text
             self.status_code = int(status.get("code"))
 
         elif self.original_request.startswith("remove"):  # eg remove_zone_name
-            status = elem.find("./Status")
+            status = response_elem.find("./Status")
             self.data["message"] = status.text
             self.status_code = int(status.get("code"))
