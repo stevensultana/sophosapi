@@ -5,7 +5,7 @@ import warnings
 from urllib.request import urlopen
 from xml.etree.ElementTree import Element
 
-from defusedxml import ElementTree as ET
+from defusedxml import ElementTree as ET  # type: ignore
 
 from .api_factory import _create_element
 from .request import Request
@@ -25,7 +25,7 @@ class Client:
         is_encrypted: bool = True,
         server: str,
         port: int = 4444,
-    ):
+    ) -> None:
         self.username = username
         self.password = password
         self.is_encrypted = is_encrypted
@@ -33,13 +33,13 @@ class Client:
         self.port = port
 
         if not is_encrypted:
-            warnings.warn(
+            warnings.warn(  # type: ignore
                 "Password is not encrypted - Check the Sophos Docs for "
                 "instructions how to encrypt your password.",
                 stacklevel=2,
             )
 
-    def send(self, request: Request) -> Response:
+    def send(self, request: Request) -> list[Response]:
         response_element = self._make_api_call(request)
         responses = self._parse_response(response_element)
         return responses
@@ -55,7 +55,7 @@ class Client:
         response_element = ET.fromstring(response_http.read())
         return response_element
 
-    def _parse_response(self, response_element: Element):
+    def _parse_response(self, response_element: Element) -> list[Response]:
         responses = [Response(e) for e in response_element]
 
         # don't need to store the Successful Authentication response:
@@ -104,7 +104,7 @@ class Client:
 
             response = Response(response_element[0])
             status_code = response.status_code
-            message = response.data["message"]
+            message = response.data["message"]  # type: ignore
 
         return {
             "status_code": status_code,
@@ -112,38 +112,40 @@ class Client:
         }
 
     # PROXIES FOR REQUEST
-    def _request_proxy_call(self, fn_name, *args, **kwargs):
+    def _request_proxy_call(
+        self, fn_name: str, *args, **kwargs
+    ) -> list[Response]:
         request = Request(apiversion="1805.2")
         getattr(request, fn_name)(*args, **kwargs)
 
-        response = self.send(request)
-        return response
+        responses = self.send(request)
+        return responses
 
     # ZONES
-    def get_zones(self, *args, **kwargs):
+    def get_zones(self, *args, **kwargs) -> list[Response]:
         return self._request_proxy_call("get_zones", *args, **kwargs)
 
-    def get_zone(self, *args, **kwargs):
+    def get_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("get_zone", *args, **kwargs)[0]
 
-    def get_zones_like(self, *args, **kwargs):
+    def get_zones_like(self, *args, **kwargs) -> list[Response]:
         return self._request_proxy_call("get_zones_like", *args, **kwargs)
 
-    def get_zones_except(self, *args, **kwargs):
+    def get_zones_except(self, *args, **kwargs) -> list[Response]:
         return self._request_proxy_call("get_zones_except", *args, **kwargs)
 
-    def set_zone(self, *args, **kwargs):
+    def set_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("set_zone", *args, **kwargs)[0]
 
-    def add_zone(self, *args, **kwargs):
+    def add_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("add_zone", *args, **kwargs)[0]
 
-    def update_zone(self, *args, **kwargs):
+    def update_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("update_zone", *args, **kwargs)[0]
 
-    def remove_zone(self, *args, **kwargs):
+    def remove_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("remove_zone", *args, **kwargs)[0]
 
     # HOSTS
-    def set_host(self, *args, **kwargs):
+    def set_host(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("set_host", *args, **kwargs)[0]

@@ -1,4 +1,9 @@
+from __future__ import annotations
+
 from enum import Enum
+from typing import Dict
+from typing import List
+from typing import Union
 from xml.etree.ElementTree import Element
 
 tags_of_lists = ("SourceNetworks",)
@@ -41,11 +46,14 @@ def _make_filter(type: Filter, name: str) -> Element:
     return filter_elem
 
 
-def xml_to_json(elem: Element) -> dict:
+JsonData = Dict[str, Union[str, List[str], dict]]
+
+
+def xml_to_json(elem: Element) -> JsonData:
     """Create a dict with "attribute.tag":"text" pairs, or nesting/lists as
     needed
     """
-    obj = {}
+    obj: JsonData = {}
     for attribute in elem:
         if len(attribute) > 0:  # has children
             if attribute.tag in tags_of_lists:  # handle list

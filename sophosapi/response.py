@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from xml.etree.ElementTree import Element
 
+from .api_factory import JsonData
 from .api_factory import xml_to_json
 
 
 class Response:
-    def __init__(self, response_elem: Element):
-        self.data = {}
+    def __init__(self, response_elem: Element) -> None:
+        self.data: JsonData = {}
         self.status_code = 0
         self.original_request = response_elem.get("transactionid")
 
