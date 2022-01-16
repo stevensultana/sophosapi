@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import os
 import urllib.parse
 import warnings
+from getpass import getpass
 from urllib.request import urlopen
 from xml.etree.ElementTree import Element
 
+import dotenv
 from defusedxml import ElementTree as ET  # type: ignore
 
 from .api_factory import _create_element
@@ -20,17 +23,40 @@ class Client:
     def __init__(
         self,
         *,
-        username: str,
-        password: str,
+        username: str | None = None,
+        password: str | None = None,
         is_encrypted: bool = True,
-        server: str,
+        server: str | None = None,
         port: int = 4444,
     ) -> None:
+
+        dotenv.load_dotenv()
+
         self.username = username
         self.password = password
         self.is_encrypted = is_encrypted
         self.server = server
         self.port = port
+
+        if self.username is None:  # not provided by user
+            self.username = os.getenv("SOPHOS_API_USERNAME")
+
+            if self.username is None:  # not found in .env
+                self.username = input("Enter Sophos API username: ")
+
+        if self.password is None:  # not provided by user
+            self.password = os.getenv("SOPHOS_API_PASSWORD_ENCRYPTED")
+            self.is_encrypted = True
+
+            if self.password is None:  # not found in .env
+                self.password = getpass("Enter Sophos API password: ")
+                self.is_encrypted = False
+
+        if self.server is None:  # not provided by user
+            self.server = os.getenv("SOPHOS_API_FIREWALL_IP")
+
+            if self.server is None:  # not found in .env
+                self.server = input("Enter Sophos Firewall IP address: ")
 
         if not is_encrypted:
             warnings.warn(  # type: ignore

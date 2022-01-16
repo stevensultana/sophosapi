@@ -1,1 +1,2 @@
 defusedxml
+python-dotenv

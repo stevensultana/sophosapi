@@ -1,3 +1,4 @@
 defusedxml
 pre-commit
 pytest
+python-dotenv
