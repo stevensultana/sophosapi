@@ -47,6 +47,7 @@ class Client:
     def _make_api_call(self, request: Request) -> Element:
         request.set_login(self.get_login_tag())
         req_str = urllib.parse.quote(str(request))
+        # TODO: exception handling
         # try
         response_http = urlopen(
             f"https://{self.server}:{self.port}/webconsole/APIController?reqxml={req_str}"  # noqa: E501
@@ -70,6 +71,7 @@ class Client:
         if login_response is not None:
             responses.remove(login_response)
 
+        # TODO
         # for each response:
         #     find corresponding request using transactionid
         #     set a reference to the request in the response
@@ -120,6 +122,22 @@ class Client:
 
         responses = self.send(request)
         return responses
+
+    # GENERIC METHODS
+    def get(self, *args, **kwargs) -> list[Response]:
+        return self._request_proxy_call("get", *args, **kwargs)
+
+    def get_filter(self, *args, **kwargs) -> list[Response]:
+        return self._request_proxy_call("get_filter", *args, **kwargs)
+
+    def set(self, *args, **kwargs) -> Response:
+        return self._request_proxy_call("set", *args, **kwargs)[0]
+
+    def add(self, *args, **kwargs) -> Response:
+        return self._request_proxy_call("add", *args, **kwargs)[0]
+
+    def update(self, *args, **kwargs) -> Response:
+        return self._request_proxy_call("update", *args, **kwargs)[0]
 
     # ZONES
     def get_zones(self, *args, **kwargs) -> list[Response]:

@@ -6,7 +6,34 @@ from typing import List
 from typing import Union
 from xml.etree.ElementTree import Element
 
-tags_of_lists = ("SourceNetworks",)
+tags_of_lists = {
+    "SourceZones": "Zone",
+    "DestinationZones": "Zone",
+    "SourceNetworks": "Network",
+    "DestinationNetworks": "Network",
+    "Services": "Service",
+    # "Identity": "Member",  # for FirewallRule
+    # "Identity": "Members",  # SSLTLSInspectionRule
+    "ApplicationObjects": "ApplicationObject",
+    "Users": "User",
+    "Domains": "Domain",
+    "ExceptionNetworks": "Network",
+    # "AccessPaths": "AccessPath",  # for FirewallRule
+    # "AccessPath": "backend",
+    # "AccessPath": "allowed_networks",
+    # "AccessPath": "denied_networks",
+    # "Exceptions": "Exception",
+    # "Exception": "path",
+    # "Exception": "source",
+    # "Exception": "skip_threats_filter_categories",
+    "SecurityPolicyList": "SecurityPolicy",
+    # "Websites": "Activity",  # SSLTLSInspectionRule
+    # "Hosts": "Host / DstHost",  # for LocalServiceACL
+    "ServiceDetails": "ServiceDetail",
+    "Vouchers": "Voucher",
+    "Networks": "Network",
+    "RefferredDomains": "Domains",
+}
 
 
 class Filter(Enum):
@@ -68,3 +95,32 @@ def xml_to_json(elem: Element) -> JsonData:
                 obj[attribute.tag] = ""
 
     return obj
+
+
+def json_to_xml(root: str, data: JsonData) -> Element:
+    elem = Element(root)
+    elem.extend(_json_to_xml(data))
+    return elem
+
+
+def _json_to_xml(data: JsonData) -> list[Element]:
+    children = []  # to return
+
+    for tag, value in data.items():
+        e = Element(tag)
+        children.append(e)
+
+        if isinstance(value, str):
+            e.text = value
+
+        elif isinstance(value, dict):
+            e.extend(_json_to_xml(value))  # recurse
+
+        elif isinstance(value, list):
+            sub_children_tag = tags_of_lists[tag]
+            sub_children = [
+                _create_element(sub_children_tag, text=item) for item in value
+            ]
+            e.extend(sub_children)
+
+    return children

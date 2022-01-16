@@ -7,6 +7,7 @@ from defusedxml import ElementTree as ET  # type: ignore
 from .api_factory import _create_element
 from .api_factory import _make_filter
 from .api_factory import Filter
+from .api_factory import json_to_xml
 
 
 class Request:
@@ -34,36 +35,55 @@ class Request:
     def set_login(self, login: Element) -> None:
         self.request.insert(0, login)
 
+    # GENERIC METHODS
+    def get(self, entity: str) -> None:
+        elem = _create_element(entity, transactionid=f"get_{entity}s")
+        self._get.append(elem)
+
+    def get_filter(self, entity: str, type: Filter, name: str) -> None:
+        elem = _create_element(
+            entity, transactionid=f"get_{entity}_{type.name}"
+        )
+        filter_elem = _make_filter(type, name)
+        elem.append(filter_elem)
+        self._get.append(elem)
+
+    def set(self, entity: str, data: dict) -> None:
+        elem = json_to_xml(entity, data)
+        elem.set("transactionid", f"set_{entity}")
+        self._set.append(elem)
+
+    def add(self, entity: str, data: dict) -> None:
+        elem = json_to_xml(entity, data)
+        elem.set("transactionid", f"set_{entity}")
+        self._add.append(elem)
+
+    def update(self, entity: str, data: dict) -> None:
+        elem = json_to_xml(entity, data)
+        elem.set("transactionid", f"set_{entity}")
+        self._update.append(elem)
+
     # ZONES
     def get_zones(self) -> None:
-        zone = _create_element("Zone", transactionid="get_zones")
-        self._get.append(zone)
-
-    def _get_zone_filter(
-        self, transactionid: str, type: Filter, name: str
-    ) -> None:
-        zone = _create_element("Zone", transactionid=transactionid)
-        filter_elem = _make_filter(type, name)
-        zone.append(filter_elem)
-        self._get.append(zone)
+        self.get("Zone")
 
     def get_zone(self, name: str) -> None:
-        self._get_zone_filter("get_zone_equal", Filter.EQUAL, name)
+        self.get_filter("Zone", Filter.EQUAL, name)
 
     def get_zones_like(self, name: str) -> None:
-        self._get_zone_filter("get_zone_like", Filter.LIKE, name)
+        self.get_filter("Zone", Filter.LIKE, name)
 
     def get_zones_except(self, name: str) -> None:
-        self._get_zone_filter("get_zone_except", Filter.EXCEPT, name)
+        self.get_filter("Zone", Filter.EXCEPT, name)
 
-    def set_zone(self, *args, **kwargs) -> None:
-        pass
+    def set_zone(self, data: dict) -> None:
+        self.set("zone", data)
 
-    def add_zone(self, *args, **kwargs) -> None:
-        pass
+    def add_zone(self, data: dict) -> None:
+        self.add("zone", data)
 
-    def update_zone(self, *args, **kwargs) -> None:
-        pass
+    def update_zone(self, data: dict) -> None:
+        self.update("zone", data)
 
     def remove_zone(self, *args, **kwargs) -> None:
         pass
