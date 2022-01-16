@@ -64,6 +64,8 @@ def _make_filter(type: Filter, name: str) -> Element:
         <key "name"="Name" "criteria"="type.value">name</key>
     </Filter>
     """
+    # TODO: sometimes we can filter with something else which is not a name
+    # Eg. for IPHost, we cna filter by IPAddress
     filter_elem = _create_element("Filter")
     key_elem = _create_element("key", text=name)
     key_elem.set("name", "Name")
@@ -97,13 +99,20 @@ def xml_to_json(elem: Element) -> JsonData:
     return obj
 
 
-def json_to_xml(root: str, data: JsonData) -> Element:
-    elem = Element(root)
+def json_to_xml(entity: str, data: JsonData) -> Element:
+    """`entity` is the main item, eg Zone, IPHost, etc.
+    `data` is dict of attributes of the entity, eg name, type, description
+    """
+    elem = Element(entity)
     elem.extend(_json_to_xml(data))
     return elem
 
 
 def _json_to_xml(data: JsonData) -> list[Element]:
+    """Works on the entity data to return a list of elements for each attribute
+    It is expected that this list of elements is set to be the children of a
+    root entity Element.
+    """
     children = []  # to return
 
     for tag, value in data.items():

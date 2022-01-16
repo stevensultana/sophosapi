@@ -28,15 +28,17 @@ class Client:
         is_encrypted: bool = True,
         server: str | None = None,
         port: int = 4444,
+        apiversion: str = "1805.2",
     ) -> None:
-
-        dotenv.load_dotenv()
 
         self.username = username
         self.password = password
         self.is_encrypted = is_encrypted
         self.server = server
         self.port = port
+        self.apiversion = apiversion
+
+        dotenv.load_dotenv()
 
         if self.username is None:  # not provided by user
             self.username = os.getenv("SOPHOS_API_USERNAME")
@@ -123,7 +125,7 @@ class Client:
         Read-only issues will be seen with transaction responses, not at login
         """
 
-        request = Request(apiversion="1805.2")
+        request = Request(apiversion=self.apiversion)
         response_element = self._make_api_call(request)
 
         status_code = -1
@@ -143,7 +145,11 @@ class Client:
     def _request_proxy_call(
         self, fn_name: str, *args, **kwargs
     ) -> list[Response]:
-        request = Request(apiversion="1805.2")
+        """Proxy to run one-off Request methods.
+
+        Call Request.fn_name(*args, **kwargs)
+        """
+        request = Request(apiversion=self.apiversion)
         getattr(request, fn_name)(*args, **kwargs)
 
         responses = self.send(request)
@@ -192,7 +198,3 @@ class Client:
 
     def remove_zone(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("remove_zone", *args, **kwargs)[0]
-
-    # HOSTS
-    def set_host(self, *args, **kwargs) -> Response:
-        return self._request_proxy_call("set_host", *args, **kwargs)[0]

@@ -41,12 +41,7 @@ class Response:
             self.data = xml_to_json(response_elem)
             self.status_code = 200
 
-        elif self.original_request.startswith("set"):  # eg set_zone_name
-            status = response_elem.find("./Status")
-            self.data["message"] = status.text
-            self.status_code = int(status.get("code"))
-
-        elif self.original_request.startswith("remove"):  # eg remove_zone_name
+        else:  # set, add, update, remove
             status = response_elem.find("./Status")
             self.data["message"] = status.text
             self.status_code = int(status.get("code"))
