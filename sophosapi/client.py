@@ -139,6 +139,9 @@ class Client:
     def update(self, *args, **kwargs) -> Response:
         return self._request_proxy_call("update", *args, **kwargs)[0]
 
+    def remove(self, *args, **kwargs) -> Response:
+        return self._request_proxy_call("remove", *args, **kwargs)[0]
+
     # ZONES
     def get_zones(self, *args, **kwargs) -> list[Response]:
         return self._request_proxy_call("get_zones", *args, **kwargs)

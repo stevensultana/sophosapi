@@ -63,6 +63,11 @@ class Request:
         elem.set("transactionid", f"set_{entity}")
         self._update.append(elem)
 
+    def remove(self, entity: str, name: str) -> None:
+        elem = json_to_xml(entity, {"Name": name})
+        elem.set("transactionid", f"remove_{entity}")
+        self._remove.append(elem)
+
     # ZONES
     def get_zones(self) -> None:
         self.get("Zone")
@@ -85,8 +90,8 @@ class Request:
     def update_zone(self, data: dict) -> None:
         self.update("zone", data)
 
-    def remove_zone(self, *args, **kwargs) -> None:
-        pass
+    def remove_zone(self, name: str) -> None:
+        self.remove("zone", name)
 
     # IPHost
     def set_host(
