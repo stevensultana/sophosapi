@@ -6,34 +6,7 @@ from typing import List
 from typing import Union
 from xml.etree.ElementTree import Element
 
-tags_of_lists = {
-    "SourceZones": "Zone",
-    "DestinationZones": "Zone",
-    "SourceNetworks": "Network",
-    "DestinationNetworks": "Network",
-    "Services": "Service",
-    # "Identity": "Member",  # for FirewallRule
-    # "Identity": "Members",  # SSLTLSInspectionRule
-    "ApplicationObjects": "ApplicationObject",
-    "Users": "User",
-    "Domains": "Domain",
-    "ExceptionNetworks": "Network",
-    # "AccessPaths": "AccessPath",  # for FirewallRule
-    # "AccessPath": "backend",
-    # "AccessPath": "allowed_networks",
-    # "AccessPath": "denied_networks",
-    # "Exceptions": "Exception",
-    # "Exception": "path",
-    # "Exception": "source",
-    # "Exception": "skip_threats_filter_categories",
-    "SecurityPolicyList": "SecurityPolicy",
-    # "Websites": "Activity",  # SSLTLSInspectionRule
-    # "Hosts": "Host / DstHost",  # for LocalServiceACL
-    "ServiceDetails": "ServiceDetail",
-    "Vouchers": "Voucher",
-    "Networks": "Network",
-    "RefferredDomains": "Domains",
-}
+from .tags_of_lists import tags_of_lists
 
 
 class Filter(Enum):
@@ -45,15 +18,16 @@ class Filter(Enum):
 def _create_element(
     elem_name: str,
     *,
-    text: str = "",
-    transactionid: str = "",
+    text: str | None = None,
+    transactionid: str | None = None,
 ) -> Element:
     """Create the Element:
     <elem_name "transactionid"="id">text</elem_name>
     """
     new_element = Element(elem_name)
-    new_element.text = text
-    if transactionid != "":
+    if text is not None:
+        new_element.text = text
+    if transactionid is not None:
         new_element.set("transactionid", transactionid)
     return new_element
 
@@ -83,18 +57,31 @@ def xml_to_json(elem: Element) -> JsonData:
     needed
     """
     obj: JsonData = {}
+
+    if len(elem) == 0:
+        return elem.text or ""  # type: ignore
+
     for attribute in elem:
         if len(attribute) > 0:  # has children
-            if attribute.tag in tags_of_lists:  # handle list
-                obj[attribute.tag] = [e.text for e in attribute]
+
+            if attribute.tag == "Hosts":  # special case for LocalServiceACL
+                obj["Hosts"] = [e.text for e in attribute.findall("./Host")]
+                obj["DstHosts"] = [e.text for e in attribute.findall("./DstHost")]  # noqa: E501
+
+            elif attribute.tag == "AccessPaths":  # special case for WAF Rules
+                obj["AccessPaths"] = _handle_FirewallRule_HTTPBasedPolicy_AccessPaths(attribute)
+
+            elif attribute.tag == "Exceptions":  # special case for WAF Rules
+                obj["Exceptions"] = _handle_FirewallRule_HTTPBasedPolicy_Exceptions(attribute)
+
+            elif attribute.tag in tags_of_lists:  # handle list
+                obj[attribute.tag] = [xml_to_json(e) for e in attribute]  # type: ignore
 
             else:  # recurse
                 obj[attribute.tag] = xml_to_json(attribute)
 
         else:
-            obj[attribute.tag] = attribute.text
-            if obj[attribute.tag] is None:
-                obj[attribute.tag] = ""
+            obj[attribute.tag] = attribute.text or ""
 
     return obj
 
@@ -105,6 +92,16 @@ def json_to_xml(entity: str, data: JsonData) -> Element:
     """
     elem = Element(entity)
     elem.extend(_json_to_xml(data))
+
+    if entity == "SSLTLSInspectionRule":
+        elem = _handle_SSLTLSInspectionRule_Identity(elem)
+
+    elif entity == "LocalServiceACL":
+        elem = _handle_LocalServiceACL_Hosts(elem)
+
+    elif entity == "FirewallRule" and elem.find("./HTTPBasedPolicy"):
+        elem = _handle_FirewallRule_HTTPBasedPolicy(elem)
+
     return elem
 
 
@@ -126,10 +123,138 @@ def _json_to_xml(data: JsonData) -> list[Element]:
             e.extend(_json_to_xml(value))  # recurse
 
         elif isinstance(value, list):
+            sub_children = []
             sub_children_tag = tags_of_lists[tag]
-            sub_children = [
-                _create_element(sub_children_tag, text=item) for item in value
-            ]
+            for sub_child in value:
+                sub_child_elem = _create_element(sub_children_tag)
+                if isinstance(sub_child, str):
+                    sub_child_elem.text = sub_child
+
+                elif isinstance(sub_child, dict):
+                    sub_child_elem.extend(_json_to_xml(sub_child))
+                sub_children.append(sub_child_elem)
             e.extend(sub_children)
 
     return children
+
+
+# json_to_xml special cases
+def _handle_SSLTLSInspectionRule_Identity(elem: Element) -> Element:
+    # json_to_xml special case
+    for e in elem.findall(".//Identity/Member"):
+        e.tag = "Members"
+
+    return elem
+
+
+def _handle_LocalServiceACL_Hosts(elem: Element) -> Element:
+    # json_to_xml special case
+    dsthosts = elem.find(".//DstHosts")
+    if dsthosts is not None:
+        hosts = elem.find(".//Hosts") or Element("Hosts")
+        hosts.extend(dsthosts)
+        elem.remove(dsthosts)
+
+    return elem
+
+
+def _handle_FirewallRule_HTTPBasedPolicy(elem: Element) -> Element:
+    # json_to_xml special case
+    access_paths = elem.find("./HTTPBasedPolicy/AccessPaths")
+    if access_paths is not None:
+        for access_path in access_paths:
+            backends = access_path.find("./backends")
+            if backends is not None:
+                access_path.extend(backends)
+                access_path.remove(backends)
+
+            allowed_networks = access_path.find("./allowed_networks")
+            if allowed_networks is not None:
+                access_path.extend(allowed_networks)
+                access_path.remove(allowed_networks)
+
+            denied_networks = access_path.find("./denied_networks")
+            if denied_networks is not None:
+                access_path.extend(denied_networks)
+                access_path.remove(denied_networks)
+
+    exceptions = elem.find("./HTTPBasedPolicy/Exceptions")
+    if exceptions is not None:
+        for exception in exceptions:
+            paths = exception.find("./paths")
+            if paths is not None:
+                exception.extend(paths)
+                exception.remove(paths)
+
+            sources = exception.find("./sources")
+            if sources is not None:
+                exception.extend(sources)
+                exception.remove(sources)
+
+            stfc = exception.find("./skip_threats_filter_categories")
+            if stfc is not None:
+                exception.extend(stfc)
+                exception.remove(stfc)
+
+    return elem
+
+
+# xml_to_json special cases
+def _handle_FirewallRule_HTTPBasedPolicy_AccessPaths(AccessPaths: Element) -> list:  # noqa: E501
+    # xml_to_json special case
+    access_path_list = []
+    for AccessPath in AccessPaths.findall("./AccessPath"):
+        obj: JsonData = {}
+
+        for attribute in AccessPath:
+            if attribute.tag == "backend":
+                if "backends" not in obj:
+                    obj["backends"] = []
+                obj["backends"].append(attribute.text)  # type: ignore
+
+            elif attribute.tag == "allowed_networks":
+                if "allowed_networks" not in obj:
+                    obj["allowed_networks"] = []
+                obj["allowed_networks"].append(attribute.text)  # type: ignore
+
+            elif attribute.tag == "denied_networks":
+                if "denied_networks" not in obj:
+                    obj["denied_networks"] = []
+                obj["denied_networks"].append(attribute.text)  # type: ignore
+
+            else:
+                obj[attribute.tag] = attribute.text or ""
+
+        access_path_list.append(obj)
+
+    return access_path_list
+
+
+def _handle_FirewallRule_HTTPBasedPolicy_Exceptions(Exceptions: Element) -> list:  # noqa: E501
+    # xml_to_json special case
+    exception_list = []
+    for Exception in Exceptions.findall("./Exception"):
+        obj: JsonData = {}
+
+        for attribute in Exception:
+            if attribute.tag == "path":
+                if "paths" not in obj:
+                    obj["paths"] = []
+                obj["paths"].append(attribute.text)  # type: ignore
+
+            elif attribute.tag == "source":
+                if "sources" not in obj:
+                    obj["sources"] = []
+                obj["sources"].append(attribute.text)  # type: ignore
+
+            elif attribute.tag == "skip_threats_filter_categories":
+                if "skip_threats_filter_categories" not in obj:
+                    obj["skip_threats_filter_categories"] = []
+                obj["skip_threats_filter_categories"].append(attribute.text)  # type: ignore
+
+            else:
+                obj[attribute.tag] = attribute.text or ""
+
+        exception_list.append(obj)
+
+    return exception_list

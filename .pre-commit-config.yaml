@@ -11,18 +11,30 @@ repos:
     rev: v2.6.0
     hooks:
     -   id: reorder-python-imports
-        args: [--application-directories, '.:src', --py36-plus]
+        args: [--application-directories, '.:src', --py37-plus]
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.31.0
     hooks:
     -   id: pyupgrade
-        args: [--py36-plus]
+        args: [--py37-plus]
 -   repo: https://github.com/psf/black
     rev: 21.12b0
     hooks:
     -   id: black
+        name: black-skip-api-factory
         args: [--line-length=79]
+        exclude: (sophosapi/api_factory.py|tests/test_api_factory.py|tags_of_lists.py)
+    -   id: black
+        name: black-api-factory
+        args: [--line-length=100]
+        files: (sophosapi/api_factory.py|tests/test_api_factory.py|tags_of_lists.py)
 -   repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
     -   id: flake8
+        name: flake8-skip-api-factory
+        exclude: (sophosapi/api_factory.py|tests/test_api_factory.py|tags_of_lists.py)
+    -   id: flake8
+        name: flake8-api-factory
+        files: (sophosapi/api_factory.py|tests/test_api_factory.py|tags_of_lists.py)
+        args: [--ignore=E501]
