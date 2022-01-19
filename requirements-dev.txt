@@ -1,4 +1,5 @@
 defusedxml
+mypy
 pre-commit
 pytest
 python-dotenv
