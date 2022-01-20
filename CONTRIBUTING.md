@@ -1,7 +1,7 @@
 # Sophos Python SDK design
 
 - [Quick start](#quick-start)
-- [Some notes on Sophos's API](#some-notes-on-sophos-s-api)
+- [Some notes on Sophos's API](#some-notes-on-sophoss-api)
   - [Main reference](#main-reference)
   - [Authentication](#authentication)
   - [XML](#xml)
@@ -11,7 +11,7 @@
   - [Matching the Sophos API Nomenclature](#matching-the-sophos-api-nomenclature)
   - [Key interfaces](#key-interfaces)
   - [Internal design](#internal-design)
-  - [A note on the XML <-> JSON conversions](#a-note-on-the-xml-----json-conversions)
+  - [A note on the XML <-> JSON conversions](#a-note-on-the-xml---json-conversions)
 
 ## Quick start
 
@@ -298,4 +298,4 @@ acl: {
 }
 ```
 
-**These need to be clearly noted to the user. (insert link to user guide)**
+**These need to be clearly [noted to the user](./API%20Deviations.md).**
