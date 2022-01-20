@@ -6,7 +6,7 @@
   - [Authentication](#authentication)
   - [XML](#xml)
   - [Transactions](#transactions)
-- [This API's design](#this-api-s-design)
+- [This API's design](#this-apis-design)
   - [JSON instead of XML](#json-instead-of-xml)
   - [Matching the Sophos API Nomenclature](#matching-the-sophos-api-nomenclature)
   - [Key interfaces](#key-interfaces)
