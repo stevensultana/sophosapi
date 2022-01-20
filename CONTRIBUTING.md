@@ -1,18 +1,5 @@
 # Sophos Python SDK design
 
-- [Quick start](#quick-start)
-- [Some notes on Sophos' API](#some-notes-on-sophos-api)
-  - [Main reference](#main-reference)
-  - [Authentication](#authentication)
-  - [XML](#xml)
-  - [Transactions](#transactions)
-- [This API's design](#this-apis-design)
-  - [JSON instead of XML](#json-instead-of-xml)
-  - [Matching the Sophos API Nomenclature](#matching-the-sophos-api-nomenclature)
-  - [Key interfaces](#key-interfaces)
-  - [Internal design](#internal-design)
-  - [A note on the XML <-> JSON conversions](#a-note-on-the-xml---json-conversions)
-
 ## Quick start
 
 Thank you for your interest to contribute!
@@ -33,6 +20,22 @@ To contribute to this package, you may follow these steps:
 - launch an initial run of mypy: `mypy ./sophosapi/`
 - launch an initial run of the tests: `pytest`
 - Create your branch and contribute away!
+
+## TOC
+
+- [Quick start](#quick-start)
+- [Some notes on Sophos' API](#some-notes-on-sophos-api)
+  - [Main reference](#main-reference)
+  - [Authentication](#authentication)
+  - [XML](#xml)
+  - [Transactions](#transactions)
+- [This API's design](#this-apis-design)
+  - [JSON instead of XML](#json-instead-of-xml)
+  - [Matching the Sophos API Nomenclature](#matching-the-sophos-api-nomenclature)
+  - [Key interfaces](#key-interfaces)
+  - [Internal design](#internal-design)
+  - [A note on the XML <-> JSON conversions](#a-note-on-the-xml---json-conversions)
+
 
 ## Some notes on Sophos' API
 
