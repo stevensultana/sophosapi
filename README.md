@@ -1,6 +1,6 @@
 # The unofficial Sophos SFOS Python SDK
 This package is a Python SDK used to interface with the Sophos SFOS API. Its
-interface is JSON-based, as opposed to Sophos' XML. This means that sometimes, there are small deviations from Sophos' API, which are listed later.
+interface is JSON-based, as opposed to Sophos' XML. This means that sometimes, there are small deviations from Sophos' API, which are listed [here](./API%20Deviations.md).
 
 ## Quick start
 1. Set up a python virtual environment
