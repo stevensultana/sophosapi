@@ -1,7 +1,7 @@
 # Sophos Python SDK design
 
 - [Quick start](#quick-start)
-- [Some notes on Sophos's API](#some-notes-on-sophoss-api)
+- [Some notes on Sophos' API](#some-notes-on-sophos-api)
   - [Main reference](#main-reference)
   - [Authentication](#authentication)
   - [XML](#xml)
