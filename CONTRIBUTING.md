@@ -34,7 +34,7 @@ To contribute to this package, you may follow these steps:
 - launch an initial run of the tests: `pytest`
 - Create your branch and contribute away!
 
-## Some notes on Sophos's API
+## Some notes on Sophos' API
 
 ### Main reference
 
